@@ -1,5 +1,12 @@
 import pandas as pd
+import streamlit as st
 
-data = pd.read_csv('STRIKE_REPORTS (Public)_STRIKE_REPORTS.csv', sep=',', dtype=str)
+@st.cache_data
 
-data.head(5)
+def trialrun():
+    data = pd.read_csv('STRIKE_REPORTS.csv', sep=',', dtype=str)
+
+    st.write(data.head(10))
+    st.write("Hello World")
+
+trialrun()
