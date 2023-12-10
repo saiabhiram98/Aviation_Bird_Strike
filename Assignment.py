@@ -21,6 +21,7 @@ def trialrun():
     # st.write(count_data)
     
     count_data = count_data.head(10)
+    # count_data = count_data.sort_values(by = "Incident count", ascending= False)
     count_data_filtered = count_data[count_data["Airport"] != "UNKNOWN"]
     # st.write(count_data.columns)
     chart = alt.Chart(count_data_filtered).mark_bar().encode(
@@ -29,6 +30,7 @@ def trialrun():
     ).properties(
     title='Incident Count by Airport'   
     )
+
     st.altair_chart(chart, use_container_width= True)
 
 trialrun()
