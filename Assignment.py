@@ -190,7 +190,7 @@ def home():
                 and nearly 300 planes were destroyed between 1988 and 2021. 
                 “Bird strikes are a hazard to aviation,” said Hassan Shahidi, president and CEO of the Flight Safety Foundation.
                   “And it happens frequently, and not just to commercial airplanes, but to all sorts of aircraft."''')
-    
+    st.image('Sully~2.jpg', caption='Hudson river airplane emergency landing')
     st.write("Source: https://www.washingtonpost.com/travel/2023/04/25/bird-strike-plane-american-airlines/")
 
 
