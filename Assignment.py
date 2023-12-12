@@ -12,7 +12,7 @@ def trialrun():
     return df2
    
 df2 = trialrun()
-st.title("Airplane bird strikes analysis in the US")
+
 page = st.sidebar.selectbox("Select a page ",["Home","Overall","Filtered by State", "Filtered by Airports","Filtered by Phase of Flight"])
 gradient_to = "#ed0000"
 gradient_from = "#fcc5c5"
@@ -60,7 +60,7 @@ def phase_flight(df2):
 
 def airport(df2):
     selected_option = st.sidebar.selectbox("Select the airport you want to get some graphs of: ", df2['Airport'].unique())
-    
+    st.title(f"Airplane bird strikes analysis filtered by Airport of {selected_option}")
     data = df2[df2["Airport"] == selected_option]
 
     counts = data.groupby('Strike part').size().reset_index(name='count')
@@ -116,8 +116,30 @@ def airport(df2):
         st.altair_chart(chart3, use_container_width=True)
 
 def state(df2):
-    selected_option = st.sidebar.selectbox("Select a state: ", df2['State'].unique())
-    data = df2[df2["State"] == selected_option]
+
+    state_dict = {
+    'AL': 'Alabama', 'AK': 'Alaska', 'AZ': 'Arizona', 'AR': 'Arkansas', 'CA': 'California',
+    'CO': 'Colorado', 'CT': 'Connecticut', 'DE': 'Delaware', 'FL': 'Florida', 'GA': 'Georgia',
+    'HI': 'Hawaii', 'ID': 'Idaho', 'IL': 'Illinois', 'IN': 'Indiana', 'IA': 'Iowa', 'KS': 'Kansas',
+    'KY': 'Kentucky', 'LA': 'Louisiana', 'ME': 'Maine', 'MD': 'Maryland', 'MA': 'Massachusetts',
+    'MI': 'Michigan', 'MN': 'Minnesota', 'MS': 'Mississippi', 'MO': 'Missouri', 'MT': 'Montana',
+    'NE': 'Nebraska', 'NV': 'Nevada', 'NH': 'New Hampshire', 'NJ': 'New Jersey', 'NM': 'New Mexico',
+    'NY': 'New York', 'NC': 'North Carolina', 'ND': 'North Dakota', 'OH': 'Ohio', 'OK': 'Oklahoma',
+    'OR': 'Oregon', 'PA': 'Pennsylvania', 'RI': 'Rhode Island', 'SC': 'South Carolina', 'SD': 'South Dakota',
+    'TN': 'Tennessee', 'TX': 'Texas', 'UT': 'Utah', 'VT': 'Vermont', 'VA': 'Virginia', 'WA': 'Washington',
+    'WV': 'West Virginia', 'WI': 'Wisconsin', 'WY': 'Wyoming'
+    }
+
+    selected_option = st.sidebar.selectbox("Select a state: ", state_dict.values())
+    st.title(f"Airplane bird strikes analysis filtered by State of {selected_option}")
+
+    def get_key_by_value(state_dict, selected_option):
+        for key, value in state_dict.items():
+            if value == selected_option:
+                return key
+        return None
+
+    data = df2[df2["State"] ==  get_key_by_value(state_dict,selected_option)]
     val = len(data)
     st.write(f"Total {val} number of airplane bird strikes reported in the state of {selected_option} ")
     
@@ -131,11 +153,14 @@ def state(df2):
     counts = counts.sort_values(by = 'count', ascending = False)
 
     counts = counts.head(10)
+    counts = counts.sort_values(by = 'count', ascending = True)
+    counts['index'] = range(len(counts))
     alt_chart = (alt.Chart(counts , title = f"Top 10 bird strike species in {selected_option}").mark_bar()
-                .encode(x = 'Species:N',
-                        y = 'count:Q',
-                        color=alt.Color('count:Q', scale=alt.Scale(range=[gradient_from, gradient_to]))
-                        )
+                .encode(x = alt.X('Species:O',axis=alt.Axis(titleColor='#344037')),
+                        y = alt.Y('count:Q', title= "Count", axis=alt.Axis(titleColor='#344037'), sort= 'ascending'),
+                        color=alt.value(gradient_to)
+                        ).configure_axis(
+                        labelColor='#344037') 
                         .interactive())
     
     with bar:
@@ -148,6 +173,7 @@ def state(df2):
 #  filters like which bird species cost the most damage or strike count or impact in which state etc
 
 def overall():
+    
     years = st.sidebar.selectbox("Select a decade",["All years","1990s", "2000s", "2010s", "2020s"])
     years_range = {"All years":(1990,2024), "1990s": (1990,2000), "2000s": (2000,2010), "2010s": (2010,2020), "2020s":(2020,2024)}
     target_decade_from, target_decade_to = years_range[years]
@@ -158,10 +184,10 @@ def overall():
     year, cost = st.tabs(["Yearly strikes", "Yearly cost of repairs"])
 
     alt_chart = (alt.Chart(yearly_counts , title = f"Line chart for yearly strikes").mark_area()
-                .encode(x = 'Incident Year:N',
-                        y = 'count:Q'
-                        # color=alt.Color('count:Q', scale=alt.Scale(range=[gradient_from, gradient_to]))
-                        )
+                .encode(x = 'Incident Year:O',
+                        y = 'count:Q',
+                        color=alt.value(gradient_to)).configure_axis(
+                        labelColor='#344037') 
                         .interactive())
     
     with year:
@@ -173,25 +199,28 @@ def overall():
 
     alt_chart2 = (alt.Chart(cost_counts , title = f"Line chart for Yearly cost of repairs").mark_area()
                 .encode(x = 'Incident Year:O',
-                        y = 'Cost Repairs:Q'
+                        y = 'Cost Repairs:Q',
+                        color=alt.value(gradient_to)
                         # color=alt.Color('count:Q', scale=alt.Scale(range=[gradient_from, gradient_to]))
-                        )
+                        ).configure_axis(
+                        labelColor='#344037') 
                         .interactive())
     
     with cost:
         st.altair_chart(alt_chart2, use_container_width= True)
 
 def home():
+    st.title("Airplane bird strikes analysis in the US")
     st.write('''In perhaps the most famous bird strike incident, a US Airways jet lost power in both engines
               after striking geese after takeoff from LaGuardia Airport in 2009. The captain, Chesley “Sully” 
              Sullenberger III, brought the plane down in the Hudson River in what became known as the “Miracle
               on the Hudson.” All 155 people onboard survived.''')
-    st.image('sully.jpeg', caption='Hudson river airplane emergency landing')
+    st.image('sully.jpeg', caption='Real photo of Hudson river airplane emergency landing',width=650)
     st.write('''The FAA agency says that, across the world, more than 300 people were killed because of wildlife strikes
                 and nearly 300 planes were destroyed between 1988 and 2021. 
                 “Bird strikes are a hazard to aviation,” said Hassan Shahidi, president and CEO of the Flight Safety Foundation.
                   “And it happens frequently, and not just to commercial airplanes, but to all sorts of aircraft."''')
-    st.image('Sully.jpg', caption='Hudson river airplane emergency landing')
+    st.image('Sully.jpg', caption='Sully: Tom Hanks Movie based on the Hundson river incident',width=650)
     st.write("Source: https://www.washingtonpost.com/travel/2023/04/25/bird-strike-plane-american-airlines/")
 
 
