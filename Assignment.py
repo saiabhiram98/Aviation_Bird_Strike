@@ -12,7 +12,7 @@ def trialrun():
    
 df2 = trialrun()
 st.title("Airplane bird strikes analysis in the US")
-page = st.sidebar.selectbox("Select a page ",["Select","Filtered by Phase of Flight", "Filtered by Airports","Filtered by State","Overall"])
+page = st.sidebar.selectbox("Select a page ",["Home","Filtered by Phase of Flight", "Filtered by Airports","Filtered by State","Overall"])
 gradient_to = "#ed0000"
 gradient_from = "#fcc5c5"
 
@@ -184,6 +184,19 @@ def overall():
     with cost:
         st.altair_chart(alt_chart2)
 
+def home():
+    st.write('''In perhaps the most famous bird strike incident, a US Airways jet lost power in both engines
+              after striking geese after takeoff from LaGuardia Airport in 2009. The captain, Chesley “Sully” 
+             Sullenberger III, brought the plane down in the Hudson River in what became known as the “Miracle
+              on the Hudson.” All 155 people onboard survived.''')
+    st.image('sully.jpeg', caption='Hudson river airplane emergency landing')
+    st.write('''The FAA agency says that, across the world, more than 300 people were killed because of wildlife strikes
+                and nearly 300 planes were destroyed between 1988 and 2021. 
+                “Bird strikes are a hazard to aviation,” said Hassan Shahidi, president and CEO of the Flight Safety Foundation.
+                  “And it happens frequently, and not just to commercial airplanes, but to all sorts of aircraft."''')
+    
+    st.write("Source: https://www.washingtonpost.com/travel/2023/04/25/bird-strike-plane-american-airlines/")
+
 
 if page == "Filtered by Phase of Flight":
     phase_flight(df2)
@@ -196,3 +209,6 @@ elif page == "Filtered by State":
 
 elif page == "Overall":
     overall()
+
+elif page == "Home":
+    home()
