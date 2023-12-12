@@ -3,6 +3,7 @@ import streamlit as st
 import altair as alt
 import datetime as dt
 
+st.set_page_config(layout="wide")
 @st.cache_data
 def trialrun():
 
@@ -115,7 +116,7 @@ def airport(df2):
         st.altair_chart(chart3, use_container_width=True)
 
 def state(df2):
-    selected_option = st.sidebar.selectbox("Select a state: ", df2['State'].unique())
+    selected_option = st.selectbox("Select a state: ", df2['State'].unique())
     data = df2[df2["State"] == selected_option]
     val = len(data)
     st.write(f"Total {val} number of airplane bird strikes reported in the state of {selected_option} ")
