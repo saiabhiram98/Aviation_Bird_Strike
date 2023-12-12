@@ -101,14 +101,6 @@ def airport(df2):
 
     counts2['percentage'] = ((counts2['count'] / counts2['count'].sum()) * 100).round(2)
 
-    # alt_chart2 = (alt.Chart(counts2 , title = f"Bird strike percentage on airplane part during {selected_option}").mark_bar()
-    #             .encode(x = 'time_day:N',
-    #                     y = 'count:Q',
-    #                     color=alt.Color('percentage:Q', scale=alt.Scale(range=[gradient_from, gradient_to]))
-    #                     )
-    #                     .interactive())
-    
-    # st.altair_chart(alt_chart2, use_container_width= True)
     custom_colors = {'Night': '#3b82a2', 'Morning': '#efcb77', 'Afternoon': '#b74d38', 'Evening': '#aad675'}
 
     chart3 = alt.Chart(counts2).mark_arc().encode(
@@ -155,7 +147,11 @@ def state(df2):
 #  filters like which bird species cost the most damage or strike count or impact in which state etc
 
 def overall():
-    yearly_counts = df2['Incident Year'].value_counts().reset_index(name = 'count')
+    years = st.sidebar.selectbox("Select a decade",["All years","1990s", "2000s", "2010s", "2020s"])
+    years_range = {"All years":(1990,2024), "1990s": (1990,2000), "2000s": (2000,2010), "2010s": (2010,2020), "2020s":(2020,2024)}
+    target_decade_from, target_decade_to = years_range[years]
+    filtered_df = df2[df2['Incident Year'].between(target_decade_from, target_decade_to)]
+    yearly_counts = filtered_df['Incident Year'].value_counts().reset_index(name = 'count')
     yearly_counts.columns = ['Incident Year', 'count']
 
     year, cost = st.tabs(["Yearly strikes", "Yearly cost of repairs"])
@@ -170,7 +166,7 @@ def overall():
     with year:
             st.altair_chart(alt_chart, use_container_width= True)
 
-    cost_counts = df2.groupby('Incident Year')['Cost Repairs'].sum().reset_index()
+    cost_counts = filtered_df.groupby('Incident Year')['Cost Repairs'].sum().reset_index()
     cost_counts['Cost Repairs'] = cost_counts['Cost Repairs']/ 1_000_000.0
     # cost_counts = df2['Cost Repairs'].value_counts().reset_index(name = 'count')
 
@@ -182,7 +178,7 @@ def overall():
                         .interactive())
     
     with cost:
-        st.altair_chart(alt_chart2)
+        st.altair_chart(alt_chart2, use_container_width= True)
 
 def home():
     st.write('''In perhaps the most famous bird strike incident, a US Airways jet lost power in both engines
