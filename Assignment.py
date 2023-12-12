@@ -12,7 +12,9 @@ def trialrun():
    
 df2 = trialrun()
 st.title("Airplane bird strikes analysis in the US")
-page = st.sidebar.selectbox("Select a page ",["Select","Filtered by Phase of Flight", "Filtered by Airports","Filtered by State"])
+page = st.sidebar.selectbox("Select a page ",["Select","Filtered by Phase of Flight", "Filtered by Airports","Filtered by State","Overall"])
+gradient_to = "#ed0000"
+gradient_from = "#fcc5c5"
 
 def phase_flight(df2):
     # bar = st.sidebar.radio("",["Airplane part striked","Top 10 airports"])
@@ -146,6 +148,41 @@ def state(df2):
     with bar:
         st.altair_chart(alt_chart, use_container_width = True)
 
+#  Idea for next page is to have a line chart to represent the overall data like the strike count over the years,
+#  can have an option to filter the years by decade. it can also have the cost of repairs, the cost due to an 
+#  action taken.
+#  Can merge State and Airport if possible
+#  filters like which bird species cost the most damage or strike count or impact in which state etc
+
+def overall():
+    yearly_counts = df2['Incident Year'].value_counts().reset_index(name = 'count')
+    yearly_counts.columns = ['Incident Year', 'count']
+
+    year, cost = st.tabs(["Yearly strikes", "Yearly cost of repairs"])
+
+    alt_chart = (alt.Chart(yearly_counts , title = f"Line chart for yearly strikes").mark_area()
+                .encode(x = 'Incident Year:N',
+                        y = 'count:Q'
+                        # color=alt.Color('count:Q', scale=alt.Scale(range=[gradient_from, gradient_to]))
+                        )
+                        .interactive())
+    
+    with year:
+            st.altair_chart(alt_chart, use_container_width= True)
+
+    cost_counts = df2.groupby('Incident Year')['Cost Repairs'].sum().reset_index()
+    cost_counts['Cost Repairs'] = cost_counts['Cost Repairs']/ 1_000_000.0
+    # cost_counts = df2['Cost Repairs'].value_counts().reset_index(name = 'count')
+
+    alt_chart2 = (alt.Chart(cost_counts , title = f"Line chart for Yearly cost of repairs").mark_area()
+                .encode(x = 'Incident Year:O',
+                        y = 'Cost Repairs:Q'
+                        # color=alt.Color('count:Q', scale=alt.Scale(range=[gradient_from, gradient_to]))
+                        )
+                        .interactive())
+    
+    with cost:
+        st.altair_chart(alt_chart2)
 
 
 if page == "Filtered by Phase of Flight":
@@ -156,3 +193,6 @@ elif page == "Filtered by Airports":
 
 elif page == "Filtered by State":
     state(df2)
+
+elif page == "Overall":
+    overall()

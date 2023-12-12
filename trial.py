@@ -97,7 +97,7 @@ def airport(df2):
                 data.at[i, 'time_day'] = "Night"
             else:
                 data.at[i, 'time_day'] = "Night"
-    # st.write(data['Time'])
+    # st.write(data['Time'])    
     # st.write(data['time_day'])
     data_filtered = data[data['time_day'] != '']
     counts2 = data_filtered.groupby('time_day').size().reset_index(name='count')
@@ -129,3 +129,4 @@ if page == "Filtered by Phase of Flight":
 
 elif page == "Filtered by Airports":
     airport(df2)
+
