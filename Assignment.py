@@ -12,7 +12,7 @@ def trialrun():
    
 df2 = trialrun()
 st.title("Airplane bird strikes analysis in the US")
-page = st.sidebar.selectbox("Select a page ",["Home","Filtered by Phase of Flight", "Filtered by Airports","Filtered by State","Overall"])
+page = st.sidebar.selectbox("Select a page ",["Home","Overall","Filtered by State", "Filtered by Airports","Filtered by Phase of Flight"])
 gradient_to = "#ed0000"
 gradient_from = "#fcc5c5"
 
