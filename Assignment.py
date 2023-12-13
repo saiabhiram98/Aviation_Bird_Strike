@@ -2,6 +2,7 @@ import pandas as pd
 import streamlit as st
 import altair as alt
 import datetime as dt
+import matplotlib.pyplot as plt
 
 st.set_page_config(layout="wide")
 @st.cache_data
@@ -13,12 +14,13 @@ def trialrun():
    
 df2 = trialrun()
 
-page = st.sidebar.selectbox("Select a page ",["Home","Overall","Filtered by State", "Filtered by Airports","Filtered by Phase of Flight"])
-gradient_to = "#ed0000"
+page = st.sidebar.selectbox("Select a page ",["Home","Comprehensive insights","Filtered by State", "Filtered by Airports","Filtered by Phase of Flight"])
+gradient_to = "#c4392f"
 gradient_from = "#fcc5c5"
+color_2 = "#3c9e50"
 
 def phase_flight(df2):
-    # bar = st.sidebar.radio("",["Airplane part striked","Top 10 airports"])
+
     part, top = st.tabs(["Airplane part striked","Top 10 airports"])
     selected_option = st.sidebar.selectbox("Select the phase of flight you want to get some graphs of: ", df2['New Phase of Flight'].unique())
 
@@ -26,9 +28,6 @@ def phase_flight(df2):
 
     counts = data.groupby('Strike part').size().reset_index(name='count')
     counts['percentage'] = ((counts['count'] / counts['count'].sum()) * 100).round(2)
-
-    gradient_to = "#ed0000"
-    gradient_from = "#fcc5c5"
 
     alt_chart = (alt.Chart(counts , title = f"Bird strike percentage on airplane part during {selected_option}").mark_bar()
                 .encode(x = 'Strike part:N',
@@ -40,22 +39,8 @@ def phase_flight(df2):
     with part:
         st.altair_chart(alt_chart, use_container_width= True)
 
-    counts2 = data.groupby('Airport').size().reset_index(name='count')
-    counts2 = counts2.sort_values(by = 'count', ascending = False)
-    counts2 = counts2.head(10)
 
-    gradient_to = "#ed0000"
-    gradient_from = "#fcc5c5"
 
-    alt_chart2 = (alt.Chart(counts2 , title = f"Bird strikes in top 10 airports during {selected_option}").mark_bar()
-                .encode(x = 'Airport:N',
-                        y = 'count:Q',
-                        color=alt.Color('count:Q', scale=alt.Scale(range=[gradient_from, gradient_to]))
-                        )
-                        .interactive())
-
-    with top:
-        st.altair_chart(alt_chart2, use_container_width= True)
 
 
 def airport(df2):
@@ -67,8 +52,7 @@ def airport(df2):
     val = len(data)
     counts['percentage'] = ((counts['count'] / counts['count'].sum()) * 100).round(2)
     st.write(f"Bird strikes at {selected_option} airport are {val}")
-    gradient_to = "#ed0000"
-    gradient_from = "#fcc5c5"
+
     part, day = st.tabs(["Airplane part striked", "Time of the day"])
     alt_chart = (alt.Chart(counts , title = f"Bird strike percentage on airplane part during {selected_option}").mark_bar()
                 .encode(x = 'Strike part:N',
@@ -131,7 +115,7 @@ def state(df2):
     }
 
     selected_option = st.sidebar.selectbox("Select a state: ", state_dict.values())
-    st.title(f"Airplane bird strikes analysis filtered by State of {selected_option}")
+    st.title(f"Airplane bird strikes filtered by State of {selected_option}")
 
     def get_key_by_value(state_dict, selected_option):
         for key, value in state_dict.items():
@@ -141,15 +125,14 @@ def state(df2):
 
     data = df2[df2["State"] ==  get_key_by_value(state_dict,selected_option)]
     val = len(data)
-    st.write(f"Total {val} number of airplane bird strikes reported in the state of {selected_option} ")
+    st.write(f"Total **{val}** number of airplane bird strikes reported in the state of {selected_option} ")
     
     map, bar = st.tabs(["Map distribution of reported strikes", "Bird species involved in the strike"])
     with map:
         st.map(data, latitude= 'latitude', longitude= ' longitude')
 
     counts = data.groupby("Species").size().reset_index(name = "count")
-    gradient_to = "#ed0000"
-    gradient_from = "#fcc5c5"
+
     counts = counts.sort_values(by = 'count', ascending = False)
 
     counts = counts.head(10)
@@ -173,35 +156,48 @@ def state(df2):
 #  filters like which bird species cost the most damage or strike count or impact in which state etc
 
 def overall():
-    
-    years = st.sidebar.selectbox("Select a decade",["All years","1990s", "2000s", "2010s", "2020s"])
-    years_range = {"All years":(1990,2024), "1990s": (1990,2000), "2000s": (2000,2010), "2010s": (2010,2020), "2020s":(2020,2024)}
-    target_decade_from, target_decade_to = years_range[years]
-    filtered_df = df2[df2['Incident Year'].between(target_decade_from, target_decade_to)]
-    yearly_counts = filtered_df['Incident Year'].value_counts().reset_index(name = 'count')
+    selected_year = st.sidebar.slider('Select a range of Years', min_value=df2['Incident Year'].min(), max_value=df2['Incident Year'].max(), value=(df2['Incident Year'].min(), df2['Incident Year'].max()))
+    # years = st.sidebar.selectbox("Select a decade",["All years","1990s", "2000s", "2010s", "2020s"])
+    # years_range = {"All years":(1990,2024), "1990s": (1990,2000), "2000s": (2000,2010), "2010s": (2010,2020), "2020s":(2020,2024)}
+    # target_decade_from, target_decade_to = years_range[years]
+    selected_option2 = st.sidebar.selectbox("Select the phase of flight you want to get some graphs of: ", df2['New Phase of Flight'].unique())
+    data = df2[df2["New Phase of Flight"] == selected_option2]    
+    counts = data.groupby('Incident Year').size().reset_index(name='count with phase')
+    # filtered_df = df2[df2['Incident Year'].between(selected_year[0], selected_year[1])]
+    yearly_counts = df2['Incident Year'].value_counts().reset_index(name = 'count')
     yearly_counts.columns = ['Incident Year', 'count']
-
-    year, cost = st.tabs(["Yearly strikes", "Yearly cost of repairs"])
-
-    alt_chart = (alt.Chart(yearly_counts , title = f"Line chart for yearly strikes").mark_area()
-                .encode(x = 'Incident Year:O',
-                        y = 'count:Q',
-                        color=alt.value(gradient_to)).configure_axis(
-                        labelColor='#344037') 
-                        .interactive())
+    combined_df = pd.merge(counts, yearly_counts, on='Incident Year', how='outer')
+    year, cost, top = st.tabs(["Yearly strikes", "Yearly cost of repairs", "Top 10 airports"])
+    st.write(yearly_counts)
+    alt_chart = alt.Chart(combined_df , title = f"Line chart for yearly strikes between {selected_year[0]} to {selected_year[1]}").mark_area().encode(
+        alt.X('Incident Year:N'), alt.Y('count:Q'), alt.Y2('count with phase'), color =alt.Color('Incident Year:N')).configure_axis(
+                        labelColor='#344037').interactive()
     
+
+
+
+    
+    # counts['percentage'] = ((counts['count'] / counts['count'].sum()) * 100).round(2)
+    # # , title = f"Bird strike percentage on airplane part during {selected_option2}"
+    # alt_chart_ = alt.Chart(counts 
+    #                     ).mark_line().encode(x = 'Incident Year:N',
+    #                     y = 'count:Q',
+    #                     color=alt.value(color_2)
+    #                     ).interactive()
+    # combined = alt_chart +alt_chart_
+
     with year:
+            # st.altair_chart(combined)
             st.altair_chart(alt_chart, use_container_width= True)
+            # st.altair_chart(alt_chart_, use_container_width= True)
 
     cost_counts = filtered_df.groupby('Incident Year')['Cost Repairs'].sum().reset_index()
     cost_counts['Cost Repairs'] = cost_counts['Cost Repairs']/ 1_000_000.0
-    # cost_counts = df2['Cost Repairs'].value_counts().reset_index(name = 'count')
 
-    alt_chart2 = (alt.Chart(cost_counts , title = f"Line chart for Yearly cost of repairs").mark_area()
+    alt_chart2 = (alt.Chart(cost_counts , title = f"Line chart for Yearly cost of repairs between {selected_year[0]} to {selected_year[1]}").mark_area()
                 .encode(x = 'Incident Year:O',
                         y = 'Cost Repairs:Q',
                         color=alt.value(gradient_to)
-                        # color=alt.Color('count:Q', scale=alt.Scale(range=[gradient_from, gradient_to]))
                         ).configure_axis(
                         labelColor='#344037') 
                         .interactive())
@@ -209,12 +205,32 @@ def overall():
     with cost:
         st.altair_chart(alt_chart2, use_container_width= True)
 
+    
+    counts2 = filtered_df.groupby('Airport').size().reset_index(name='count')
+    counts2 = counts2.sort_values(by = 'count', ascending = False)
+    counts2 = counts2[counts2["Airport"] != 'UNKNOWN']
+    counts2 = counts2.head(10)
+
+    alt_chart3 = (alt.Chart(counts2 , title = f"Bird strikes in top 10 airports between {selected_year[0]} to {selected_year[1]}").mark_bar()
+            .encode(x = 'Airport:N',
+                    y = 'count:Q',
+                    color=alt.Color('count:Q', scale=alt.Scale(range=[gradient_from, gradient_to]))
+                    )
+                    .interactive())
+
+    with top:
+        st.altair_chart(alt_chart3, use_container_width= True)
+
+    
+
 def home():
     st.title("Airplane bird strikes analysis in the US")
-    st.write('''In perhaps the most famous bird strike incident, a US Airways jet lost power in both engines
-              after striking geese after takeoff from LaGuardia Airport in 2009. The captain, Chesley “Sully” 
-             Sullenberger III, brought the plane down in the Hudson River in what became known as the “Miracle
-              on the Hudson.” All 155 people onboard survived.''')
+    
+    st.write('''Airplane bird strikes refer to incidents where birds collide with aircraft during flight or during takeoff and landing. These collisions can pose a significant risk to aviation safety, potentially causing damage to aircraft engines, wings, and other critical components. To mitigate this risk, airports and aviation authorities employ various measures, such as wildlife management programs and the development of bird strike reporting systems, to enhance safety for both passengers and crew.''')
+    st.write('''This app provides a comprehensive visualization of bird strike data for over 33 years, offering insights into yearly strike patterns, state-wise distribution, and other critical analyses. By leveraging data from the past three decades, users can better understand the dynamics of bird strikes, aiding in the development of strategies to mitigate the risks associated with this aviation hazard.''')
+    
+    st.write('''In perhaps the most famous bird strike incident, a US Airways jet lost power in both engines after striking geese after takeoff from LaGuardia Airport in 2009. The captain, Chesley “Sully” Sullenberger III, brought the plane down in the Hudson River in what became known as the “Miracle on the Hudson.” All 155 people onboard survived.''')
+    
     st.image('sully.jpeg', caption='Real photo of Hudson river airplane emergency landing',width=650)
     st.write('''The FAA agency says that, across the world, more than 300 people were killed because of wildlife strikes
                 and nearly 300 planes were destroyed between 1988 and 2021. 
@@ -233,8 +249,9 @@ elif page == "Filtered by Airports":
 elif page == "Filtered by State":
     state(df2)
 
-elif page == "Overall":
+elif page == "Comprehensive insights":
     overall()
 
 elif page == "Home":
     home()
+ 
