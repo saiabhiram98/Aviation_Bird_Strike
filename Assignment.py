@@ -3,6 +3,7 @@ import streamlit as st
 import altair as alt
 import datetime as dt
 import matplotlib.pyplot as plt
+import numpy as np
 
 st.set_page_config(layout="wide")
 @st.cache_data
@@ -14,34 +15,10 @@ def trialrun():
    
 df2 = trialrun()
 
-page = st.sidebar.selectbox("Select a page ",["Home","Comprehensive insights","Filtered by State", "Filtered by Airports","Filtered by Phase of Flight"])
-gradient_to = "#c4392f"
-gradient_from = "#fcc5c5"
+page = st.sidebar.selectbox("Select a page ",["Home","Comprehensive insights","Filtered by State", "Filtered by Airports"])
+gradient_to = "#3498db"
+gradient_from = "#1f77b4"
 color_2 = "#3c9e50"
-
-def phase_flight(df2):
-
-    part, top = st.tabs(["Airplane part striked","Top 10 airports"])
-    selected_option = st.sidebar.selectbox("Select the phase of flight you want to get some graphs of: ", df2['New Phase of Flight'].unique())
-
-    data = df2[df2["New Phase of Flight"] == selected_option]
-
-    counts = data.groupby('Strike part').size().reset_index(name='count')
-    counts['percentage'] = ((counts['count'] / counts['count'].sum()) * 100).round(2)
-
-    alt_chart = (alt.Chart(counts , title = f"Bird strike percentage on airplane part during {selected_option}").mark_bar()
-                .encode(x = 'Strike part:N',
-                        y = 'percentage:Q',
-                        color=alt.Color('percentage:Q', scale=alt.Scale(range=[gradient_from, gradient_to]))
-                        )
-                        .interactive())
-
-    with part:
-        st.altair_chart(alt_chart, use_container_width= True)
-
-
-
-
 
 def airport(df2):
     selected_option = st.sidebar.selectbox("Select the airport you want to get some graphs of: ", df2['Airport'].unique())
@@ -156,70 +133,96 @@ def state(df2):
 #  filters like which bird species cost the most damage or strike count or impact in which state etc
 
 def overall():
+
     selected_year = st.sidebar.slider('Select a range of Years', min_value=df2['Incident Year'].min(), max_value=df2['Incident Year'].max(), value=(df2['Incident Year'].min(), df2['Incident Year'].max()))
-    # years = st.sidebar.selectbox("Select a decade",["All years","1990s", "2000s", "2010s", "2020s"])
-    # years_range = {"All years":(1990,2024), "1990s": (1990,2000), "2000s": (2000,2010), "2010s": (2010,2020), "2020s":(2020,2024)}
-    # target_decade_from, target_decade_to = years_range[years]
-    selected_option2 = st.sidebar.selectbox("Select the phase of flight you want to get some graphs of: ", df2['New Phase of Flight'].unique())
-    data = df2[df2["New Phase of Flight"] == selected_option2]    
-    counts = data.groupby('Incident Year').size().reset_index(name='count with phase')
-    # filtered_df = df2[df2['Incident Year'].between(selected_year[0], selected_year[1])]
-    yearly_counts = df2['Incident Year'].value_counts().reset_index(name = 'count')
-    yearly_counts.columns = ['Incident Year', 'count']
-    combined_df = pd.merge(counts, yearly_counts, on='Incident Year', how='outer')
+    filtered_df = df2[df2['Incident Year'].between(selected_year[0], selected_year[1])]    
+    yearly_counts = filtered_df.groupby('Incident Year').size().reset_index(name='count')   
+
     year, cost, top = st.tabs(["Yearly strikes", "Yearly cost of repairs", "Top 10 airports"])
-    st.write(yearly_counts)
-    alt_chart = alt.Chart(combined_df , title = f"Line chart for yearly strikes between {selected_year[0]} to {selected_year[1]}").mark_area().encode(
-        alt.X('Incident Year:N'), alt.Y('count:Q'), alt.Y2('count with phase'), color =alt.Color('Incident Year:N')).configure_axis(
-                        labelColor='#344037').interactive()
-    
+
+    alt_chart = alt.Chart(yearly_counts , title = f"Line chart for yearly strikes and comparison with phase of flight between {selected_year[0]} to {selected_year[1]}"
+                          ).mark_area().encode(
+                          alt.X('Incident Year:N'), alt.Y('count:Q'),
+                           color =alt.value(gradient_to),
+                           tooltip=['Incident Year:N', 'count:Q']).interactive()
 
 
-
-    
-    # counts['percentage'] = ((counts['count'] / counts['count'].sum()) * 100).round(2)
-    # # , title = f"Bird strike percentage on airplane part during {selected_option2}"
-    # alt_chart_ = alt.Chart(counts 
-    #                     ).mark_line().encode(x = 'Incident Year:N',
-    #                     y = 'count:Q',
-    #                     color=alt.value(color_2)
-    #                     ).interactive()
-    # combined = alt_chart +alt_chart_
+    selected_option2 = st.sidebar.selectbox("Select the phase of the flight for comparison : ", df2['New Phase of Flight'].unique())
+    data = filtered_df[filtered_df["New Phase of Flight"] == selected_option2] 
+    counts = data.groupby('Incident Year').size().reset_index(name='count with phase')
+    alt_chart_ = alt.Chart(counts).mark_area().encode(
+                        x = 'Incident Year:N',
+                        y = 'count with phase:Q',
+                        color=alt.value(gradient_from),
+                        tooltip=['Incident Year:N', 'count with phase:Q']
+                        )
+    combined = alt_chart+alt_chart_
 
     with year:
-            # st.altair_chart(combined)
-            st.altair_chart(alt_chart, use_container_width= True)
-            # st.altair_chart(alt_chart_, use_container_width= True)
+            st.altair_chart(combined, use_container_width= True)
 
+
+    
     cost_counts = filtered_df.groupby('Incident Year')['Cost Repairs'].sum().reset_index()
     cost_counts['Cost Repairs'] = cost_counts['Cost Repairs']/ 1_000_000.0
 
     alt_chart2 = (alt.Chart(cost_counts , title = f"Line chart for Yearly cost of repairs between {selected_year[0]} to {selected_year[1]}").mark_area()
                 .encode(x = 'Incident Year:O',
-                        y = 'Cost Repairs:Q',
+                        y = alt.Y('Cost Repairs:Q', title = "Cost of repairs in million"),
                         color=alt.value(gradient_to)
-                        ).configure_axis(
-                        labelColor='#344037') 
-                        .interactive())
+                        ).interactive())
     
-    with cost:
-        st.altair_chart(alt_chart2, use_container_width= True)
+    data = filtered_df[filtered_df["New Phase of Flight"] == selected_option2] 
+    counts_cost = data.groupby('Incident Year')['Cost Repairs'].sum().reset_index()
+    counts_cost['Cost Repairs'] = counts_cost['Cost Repairs']/ 1_000_000.0
 
+    alt_chart2_ = alt.Chart(counts_cost).mark_area().encode(
+                        x = 'Incident Year:N',
+                        y = 'Cost Repairs:Q',
+                        color=alt.value(gradient_from),
+                        tooltip=['Incident Year:N', 'Cost Repairs:Q']
+                        )
     
+    combined_chart2 = alt_chart2 + alt_chart2_
+    with cost:
+        st.altair_chart(combined_chart2, use_container_width= True)
+
+
     counts2 = filtered_df.groupby('Airport').size().reset_index(name='count')
     counts2 = counts2.sort_values(by = 'count', ascending = False)
     counts2 = counts2[counts2["Airport"] != 'UNKNOWN']
     counts2 = counts2.head(10)
-
+    
+    airport_list = []
+    for i,j in counts2.iterrows():
+        airport_list.append(j[0])
+  
     alt_chart3 = (alt.Chart(counts2 , title = f"Bird strikes in top 10 airports between {selected_year[0]} to {selected_year[1]}").mark_bar()
             .encode(x = 'Airport:N',
                     y = 'count:Q',
-                    color=alt.Color('count:Q', scale=alt.Scale(range=[gradient_from, gradient_to]))
-                    )
-                    .interactive())
+                    color=alt.value(gradient_to)
+                    ).interactive())
 
+    data = filtered_df[filtered_df["New Phase of Flight"] == selected_option2] 
+    counts_airport = data.groupby('Airport').size().reset_index(name = 'count')
+    counts_airport = counts_airport.sort_values(by = 'count', ascending = False)
+    counts_airport = counts_airport[counts_airport["Airport"] != 'UNKNOWN']
+    counts_airport_final = pd.DataFrame([])
+
+    for i, j in counts_airport.iterrows():
+        if j['Airport'] in airport_list:
+            counts_airport_final = pd.concat([counts_airport_final, pd.DataFrame({'Airport': [j['Airport']], 'count': [j['count']]})])
+
+    alt_chart3_ = alt.Chart(counts_airport_final).mark_bar().encode(
+                        x = 'Airport:N',
+                        y = 'count:Q',
+                        color=alt.value(gradient_from),
+                        tooltip=['Airport:N', 'count:Q']
+                        )
+    
+    combined_chart3 = alt_chart3 + alt_chart3_
     with top:
-        st.altair_chart(alt_chart3, use_container_width= True)
+        st.altair_chart(combined_chart3, use_container_width= True)
 
     
 
