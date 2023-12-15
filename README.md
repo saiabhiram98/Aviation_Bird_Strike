@@ -1,6 +1,9 @@
 # Aviation_Bird_Strike
 
 Click to open [Streamlit App](https://aviationbirdstrike.streamlit.app/)
+
+![image](https://i.ibb.co/Qjk1XsG/Screenshot-2023-12-15-at-12-52-20-AM.png)
+
 ## Introduction
 This app presents multiple analyses of aviation bird strikes in America spanning 33 years.Bird strikes involving airplanes occur when birds collide with aircraft during flight, takeoff, or landing, posing substantial risks to aviation safety. These incidents have the potential to cause damage to crucial aircraft components, including engines and wings.
 
