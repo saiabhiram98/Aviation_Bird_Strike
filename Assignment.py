@@ -7,7 +7,7 @@ st.set_page_config(layout="wide")
 @st.cache_data
 def trialrun():
 
-    df2 = pd.read_csv("trail_data.csv", sep = ',')
+    df2 = pd.read_csv("./Data/trail_data.csv", sep = ',')
 
     return df2
    
